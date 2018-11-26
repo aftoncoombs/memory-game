@@ -1,4 +1,5 @@
 /*
+/*
  * Create a list that holds all of your cards
  */
  var cardList = document.getElementsByClassName("card");
@@ -54,14 +55,13 @@ Show the card if clicked, up to two cards at a time.
 */
 
  // CREDIT : Animations from * animate.css -http://daneden.me/animate. Copyright (c) 2018 Daniel Eden
+// Currently not implemented but will be in future versions.
 
 // Set up variables that will be resused
 var cards = document.getElementsByClassName("card");
 var flippedCards = [];
 var matchedCards = [];
-var cardFlips = 0;
-var originalCardFlips = 0;
-//var hold = false;
+var moves = 0;
 var sec = 0;
 var min = 0;
 var stars = 3;
@@ -85,12 +85,12 @@ timer = function() {
         timeString = min + " Minutes " + sec + " Seconds";
         document.getElementById("timer").innerHTML = timeString;
         // Update stars based on timer and flips
-        if ((min > 5 | cardFlips >= 8) & stars > 2){
+        if ((min > 5 | moves >= 8) & stars > 2){
             stars -- ;
             console.log("lost 1 star!")
             document.getElementById("star1").classList.remove("fa-star");
         }
-        if ((min > 10 | cardFlips >= 12) & stars > 1){
+        if ((min > 10 | moves >= 12) & stars > 1){
             stars -- ;
             console.log("lost 2 stars!")
             document.getElementById("star2").classList.remove("fa-star");
@@ -103,46 +103,34 @@ window.onload = timer;
 
 // Flips over a card
 function flipCards(cardElement){
-    clickable = false;
-    if (flippedCards.length > 1) {
-        twoCardsFlipped = true;
-    } else {
-        clickable = true;
+    if (flippedCards.length >= 2) {
+        clearFlippedCards();
     }
-    if (clickable){
-        this.classList.add("open-show");
+    this.classList.add("open-show");
+    if (!flippedCards.includes(this)) {
         flippedCards.push(this);
-        // this.classList.add("animated");
-        // this.classList.add("swing");
-    } 
+    }
 }
-
-// Adds to currently flipped cards
-// function addToFlippedList(cardElement){
-//     if (flippedCards.length < 2) {
-//         flippedCards.push(this);
-//         this.removeEventListener("click", addToFlippedList);
-//     }
-// }
 
 // Locks cards because they are a match
 function lockCards(){
     for (var i = 0; i < flippedCards.length; i++){
         flippedCards[i].classList.add("match");
+        flippedCards[i].removeEventListener("click", flipCards)
         matchedCards.push(flippedCards[i]);
     }
 }
 
 // Clears all currently flipped cards back to blank
-function clearFlippedCards(){
-    while (flippedCards.length > 0){
-        flippedCards[flippedCards.length-1].classList.remove("open-show");
-        flippedCards[flippedCards.length-1].addEventListener("click", updateMoves);
-        // flippedCards[flippedCards.length-1].classList.remove("animated");
-        // flippedCards[flippedCards.length-1].classList.remove("swing");
-        flippedCards.pop();
-    }
-    clickable = true;
+function clearFlippedCards() {
+    while (flippedCards.length > 0) {
+        flippedCards[flippedCards.length - 1].classList.remove("open-show");
+        // If the flipped cards are in the matched cards array, don't re-add the flipCards event listener
+        if (!matchedCards.includes(flippedCards[flippedCards.length - 1])) {
+            flippedCards[flippedCards.length - 1].addEventListener("click", flipCards);
+        }
+            flippedCards.pop();
+        }
 }
 
 // Clears the list of matches (useful for reset)
@@ -153,71 +141,37 @@ function clearMatches(){
     }
 }
 
-// Prevents clicking a new card while current match check in process
-function holdClicks(){
-    if (flippedCards.length > 1){
-        //hold = true;
-    }
-}
-
 // Updates remaining moves
-function updateMoves(){
-    if (twoCardsFlipped) {
-        cardFlips = cardFlips + 1 ;
-        movesMade = document.getElementById("moves");
-        movesMade.innerHTML = Math.round(cardFlips/2);
-    }
+function updateMoves() {
+    moves = moves + 1;
+    movesMade = document.getElementById("moves");
+    movesMade.innerHTML = Math.round(moves);
 }
 
 // Resets remaining moves
 function resetMoves(){
     movesMade = document.getElementById("moves");
     movesMade.innerHTML = 0;
-    cardFlips = 0;
+    moves = 0;
     min = 0;
     sec = 0;
 }
 
 // Checks for a match. Clears currently flipped cards and locks cards if  they are a match.
-function checkMatch(){
-    if (flippedCards.length > 1){
-        clickable = false;
-    }
-    setTimeout(check, 1000)
-    function check(){
-        flippedCards[0].removeEventListener("click", updateMoves);
-        flippedCards[1].removeEventListener("click", updateMoves);
-        if (flippedCards.length == 2){
-            if (flippedCards[0].innerHTML == flippedCards[1].innerHTML){
-                lockCards(flippedCards);
-                twoCardsFlipped = true;
-            }
-            // } else {
-            //     flippedCards[0].addEventListener("click", addToFlippedList);
-            //     flippedCards[1].addEventListener("click", addToFlippedList);
-            // }
+function checkMatch() {
+    if (flippedCards.length == 2) {
+        if (flippedCards[0].innerHTML == flippedCards[1].innerHTML) {
+            lockCards(flippedCards);
             clearFlippedCards();
-            //hold = false;
-            //twoCardsFlipped = false;
+            // twoCardsFlipped = true;
         }
+        updateMoves();
     }
 }  
 
 // Clears the entire deck of flipped cards and matches. Resets the deck and shuffles it.
 function clearAll(){
     var deck = document.getElementById("deck");
-    // setTimeout(resetAnim, 1000);
-    // deck.classList.remove("animated");
-    // deck.classList.remove("shake");
-    // function resetAnim(){
-    //     deck.classList.add("animated");
-    //     deck.classList.add("shake");
-    //     clearFlippedCards();
-    //     clearMatches();
-    //     resetMoves();
-    //     shuffleDeck();
-    //     cardFlips = originalCardFlips;
-    // }
     clearFlippedCards();
     clearMatches();
     resetMoves();
@@ -238,7 +192,7 @@ function win(){
         keepTiming = false;
         var freezeMin = min;
         var freezeSec = sec;
-        modalText.innerHTML = cardFlips / 2 + " moves in " + freezeMin + " minutes, " + freezeSec + " seconds. " + "You earned " + stars + " stars!"
+        modalText.innerHTML = moves + " moves in " + freezeMin + " minutes, " + freezeSec + " seconds. " + "You earned " + stars + " stars!"
         modal.style.display = "block";
     }
 }
@@ -256,9 +210,7 @@ window.onclick = function(event) {
 // Add listeners to cards to flip, hold clicks, update moves, check matches, and clear
 for (var i = 0; i < cards.length; i++) {
     cards[i].addEventListener("click", flipCards);
-    //cards[i].addEventListener("click", addToFlippedList);
     cards[i].addEventListener("click", checkMatch);
-    //cards[i].addEventListener("click", updateMoves);
 }  
 
 // Restart game
